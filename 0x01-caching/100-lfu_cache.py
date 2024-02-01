@@ -3,15 +3,17 @@
 """
 from threading import RLock
 
-LFUCache = __import__('100-lfu_cache').LFUCache
-
+BaseCaching = __import__('base_caching').BaseCaching
 
 
 class LFUCache(BaseCaching):
     """
-    An implementation of LFU (Least Frequently Used) Cache Replacement Policy
-    """
+    An implementaion of LFUCache(Least frequently used)
 
+    Attributes:
+        __stats (list): A dictionary of cache keys for access count
+        __rlock (RLock): Lock accessed resources to prevent race condition
+    """
     def __init__(self):
         """ Instantiation method, sets instance attributes
         """
@@ -22,52 +24,31 @@ class LFUCache(BaseCaching):
     def put(self, key, item):
         """ Add an item in the cache
         """
-        if key is None or item is None:
-            return
-
-        with self.__rlock:
-            if key in self.cache_data:
-                """ If key already exists, update its value"""
-                self.cache_data[key] = item
-            else:
-                """ If key doesn't exist, check if cache is full"""
-                if len(self.cache_data) >= self.MAX_ITEMS:
-                    """ If cache is full, discard the least frequently used
-                    item (LFU)"""
-                    min_count = min(self.__stats.values())
-                    keys_to_discard = [k for k, v in self.__stats.items()
-                                       if v == min_count]
-                    if len(keys_to_discard) > 1:
-                        """ If there are multiple keys with the same least
-                           frequency use LRU to discard"""
-                        discarded_key = self._balance(keys_to_discard)
-                    else:
-                        """ Otherwise, discard the single least frequently
-                        used key"""
-                        discarded_key = keys_to_discard[0]
-                    del self.cache_data[discarded_key]
-                    del self.__stats[discarded_key]
-
-                """ Update cache data with the new key and item"""
-                self.cache_data[key] = item
-                self.__stats[key] = 1
+        if key is not None and item is not None:
+            keyOut = self._balance(key)
+            with self.__rlock:
+                self.cache_data.update({key: item})
+            if keyOut is not None:
+                print('DISCARD: {}'.format(keyOut))
 
     def get(self, key):
         """ Get an item by key
         """
         with self.__rlock:
-            if key in self.cache_data:
-                """ If key exists, update its frequency count and
-                return its value"""
+            value = self.cache_data.get(key, None)
+            if key in self.__stats:
                 self.__stats[key] += 1
-                return self.cache_data[key]
-            else:
-                return None
+        return value
 
-    def _balance(self, keys_to_discard):
-        """ Balance the cache by discarding the least recently used
-        key from the provided list of keys
+    def _balance(self, keyIn):
+        """ Removes the earliest item from the cache at MAX size
         """
-        """ We use LRU algorithm to discard the least recently used
-        key from the list"""
-        return min(keys_to_discard, key=lambda k: self.__stats[k])
+        keyOut = None
+        with self.__rlock:
+            if keyIn not in self.__stats:
+                if len(self.cache_data) == BaseCaching.MAX_ITEMS:
+                    keyOut = min(self.__stats, key=self.__stats.get)
+                    self.cache_data.pop(keyOut)
+                    self.__stats.pop(keyOut)
+            self.__stats[keyIn] = self.__stats.get(keyIn, 0) + 1
+        return keyOut
