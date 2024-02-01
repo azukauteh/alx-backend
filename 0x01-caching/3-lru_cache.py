@@ -27,12 +27,14 @@ class LRUCache(BaseCaching):
         with self.__rlock:
             """ Check if the key already exists"""
             if key in self.cache_data:
-                """ If key exists, update its value and move it to the end of the __keys
+                """ If key exists, update its value and move it to the
+                end of the __keys
                 list (MRU position)
                 """
                 self.__keys.remove(key)
             elif len(self.cache_data) >= self.MAX_ITEMS:
-                """ If cache is full, discard the least recently used item (LRU)"""
+                """ If cache is full, discard the least recently used
+                item (LRU)"""
                 discarded_key = self.__keys.pop(0)
                 del self.cache_data[discarded_key]
                 print(f"DISCARD: {discarded_key}")
@@ -46,7 +48,8 @@ class LRUCache(BaseCaching):
         """
         with self.__rlock:
             if key in self.cache_data:
-                """ If key exists, move it to the end of the __keys list (MRU position)"""
+                """ If key exists, move it to the end of the __keys list
+                (MRU position)"""
                 self.__keys.remove(key)
                 self.__keys.append(key)
                 return self.cache_data[key]
