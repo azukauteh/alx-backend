@@ -25,7 +25,7 @@ To install the project and its dependencies, follow these steps:
 2. Navigate to the project directory:
 
    ```bash
-   cd alx-backend-project
+   cd alx-backend
    ```
 
 3. Install dependencies using npm:
